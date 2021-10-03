@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import pymongo
 
+from logger import logger
+
 
 class HSBCModel:
     def __init__(self, document):
@@ -11,7 +13,7 @@ class HSBCModel:
         self.__client = pymongo.MongoClient(environ.get("MONGO_URI"))
         self.__db = self.__client.robin_hood
         self.collection = self.__db[environ.get("HSBC_COLLECTION")]
-        self.statments_collection = self.__db["ACCOUNT_STATMENT_COLLECTION"]
+        self.statments_collection = self.__db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
 
     def __clean_data(self):
         self.df["Importe del cargo"] = self.df["Importe del cargo"].replace(np.nan, 0)
@@ -39,8 +41,8 @@ class HSBCModel:
         item["descripcion"] = item.pop("Narrativa adicional")
         item["nombre"] = item.pop("Nombre de la cuenta")
         item["banco"] = item.pop("Nombre del banco")
-        item["cuenta"] = item.pop("N√∫mero de cuenta")
-        item["pais"] = item.pop("Pa√≠s")
+        item["cuenta"] = str(item.pop("Numero de cuenta"))
+        item["pais"] = item.pop("Pais")
         item["referencia_banco"] = str(item.pop("Referencia del Banco"))
         item["referencia_cliente"] = item.pop("Referencia del cliente")
         item["saldo"] = str(item.pop("Saldo"))
@@ -48,29 +50,33 @@ class HSBCModel:
         item["tipo_cuenta"] = item.pop("Tipo de cuenta")
         return item
 
+    def __get_account_statments(self, item: dict):
+        account = {}
+        account["cliente"] = str(item["Referencia del cliente"])
+        account["empresa"] = ""
+        account["banco"] = item["Nombre del banco"]
+        account["cuenta"] = str(item["Numero de cuenta"])
+        account["descripcion"] = item["Narrativa adicional"]
+        account["referencia"] = str(item["Referencia del Banco"])
+        account["fecha"] = item["Fecha posterior"]
+        account["deposito"] = str(item["Importe del abono"])
+        account["retiro"] = str(item["Importe del cargo"])
+        account["saldo"] = str(item["Saldo"])
+        return account
+
     def get_account_statment_dict(self):
-        self.df.reset_index(inplace=True)
-        statment = self.df.to_dict("record")
+        data = self.df
+        data.reset_index(inplace=True)
+        statment = data.to_dict("records")
         statment = list(map(self.__remove_trash_key, statment))
         statment = list(map(self.__change_key_name, statment))
         return statment
 
     def get_statment_dict(self, bank, client, company):
-        statments = []
-        for item in self.df:
-            statment = {
-                "cliente": client,
-                "empresa": company,
-                "banco": bank,
-                "cuenta": item["Numero de cuenta"],
-                "descripcion": item["Narrativa adicional"],
-                "referencia": item["Referencia del Banco"],
-                "fecha": item["Fecha posterior"],
-                "deposito": str(item["Importe del abono"]),
-                "retiro": str(item["Importe del cargo"]),
-                "saldo": str(item["Saldo"]),
-            }
-            statments.append(statment)
+        data = self.df
+        data.reset_index(inplace=True)
+        statments = data.to_dict("records")
+        statments = list(map(self.__get_account_statments, statments))
         return statments
 
     def save_statments(self, bank, client, company):
@@ -82,6 +88,5 @@ class HSBCModel:
             )
             return True
         except Exception as e:
-            # TODO: create logger
-            print(e)
+            logger.error(e)
             return False
