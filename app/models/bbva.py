@@ -3,7 +3,7 @@ from os import environ
 import pandas as pd
 import numpy as  np
 
-from app.models import db
+from app.models import db, MISSING_MESSAGE
 from logger import logger
 
 
@@ -12,6 +12,24 @@ class BBVAModel:
         self.df = pd.read_excel(document)
         self.bbva_collection = db[environ.get("BBVA_COLLECTION")]
         self.account_statment_collection = db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
+        self.mandatory_columns = [
+            'Día',
+            'Concepto / Referencia',
+            'cargo',
+            'Abono',
+            'Saldo'
+        ]
+
+    def __verified_statments(self):
+        is_valid = True
+        missing_columns = []
+        columns = list(self.df.columns)
+        for column in columns:
+            if column not in self.mandatory_columns:
+                is_valid = False
+                missing_columns.append(column)
+
+        return is_valid, missing_columns
 
     def __clear_data(self):
         self.df = self.df.rename(columns={
@@ -49,6 +67,9 @@ class BBVAModel:
         return account_statments
 
     def save_statments(self) -> bool:
+        is_valid, missing_columns = self.__verified_statments()
+        if not is_valid:
+            raise Exception(MISSING_MESSAGE.format(str(missing_columns)))
         self.__clear_data()
         try:
             self.bbva_collection.insert_many(self.__get_bbva_accounts_collection())

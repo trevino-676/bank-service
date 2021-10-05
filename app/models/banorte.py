@@ -4,11 +4,8 @@ import pandas as pd
 import numpy as np
 import pendulum
 
-from app.models import db
+from app.models import db, MISSING_MESSAGE
 from logger import logger
-
-
-MISSING_MESSAGE= "El archivo es incorrecto. Faltan las siguientes columnas: {}"
 
 
 class BanorteModel:
@@ -35,7 +32,7 @@ class BanorteModel:
     def verify_statments(self):
         verified = True
         missing_columns = []
-        columns = list(self.df.colums)
+        columns = list(self.df.columns)
         for column in columns:
             if column not in self.__verification_list:
                 verified = False
