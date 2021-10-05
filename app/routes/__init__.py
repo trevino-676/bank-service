@@ -4,6 +4,8 @@ from fastapi import APIRouter, UploadFile, File, status
 from fastapi.responses import JSONResponse
 
 from app.services.hsbc_service import HSBCService
+from app.services.banorte_service import BanorteService
+from app.services.bbva_service import BBVAService
 
 
 router = APIRouter(prefix="/v1/upload", tags=["upload files"])
@@ -16,7 +18,16 @@ def upload_file(bank: str, file: UploadFile = File(...)):
 
 
 def process_file(bank: str, file):
-    if bank.lower() == "hsbc":
+    service = None
+    bank = bank.lower()
+    if bank == "hsbc":
         service = HSBCService(file)
+        service.save_statments(bank)
+        return
+    elif bank == "bbva":
+        service = BBVAService(file)
+    elif bank == "banorte":
+        service = BanorteService(file)
 
-    service.save_statments(bank)
+    service.save_statments()
+
