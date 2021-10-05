@@ -5,6 +5,7 @@ import numpy as np
 import pymongo
 
 from logger import logger
+from app.models import MISSING_MESSAGE
 
 
 class HSBCModel:
@@ -14,6 +15,35 @@ class HSBCModel:
         self.__db = self.__client.robin_hood
         self.collection = self.__db[environ.get("HSBC_COLLECTION")]
         self.statments_collection = self.__db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
+        self.mandatory_columns = [
+            'Nombre de la cuenta',
+            'Número de cuenta',
+            'Nombre del banco',
+            'Divisa',
+            'País',
+            'Estatus de la cuenta',
+            'Tipo de cuenta',
+            'Referencia del Banco',
+            'Narrativa adicional',
+            'Referencia del cliente',
+            'Tipo TRN',
+            'Importe del abono',
+            'Importe del cargo',
+            'Saldo',
+            'Fecha posterior'
+        ]
+
+    def __verified_accounts(self):
+        is_valid = True
+        missing_columns = []
+        columns = list(self.df.columns)
+        for column in columns:
+            if column not in self.mandatory_columns:
+                is_valid = False
+                missing_columns.append(column)
+
+        return is_valid, missing_columns
+
 
     def __clean_data(self):
         self.df["Importe del cargo"] = self.df["Importe del cargo"].replace(np.nan, 0)
@@ -80,6 +110,9 @@ class HSBCModel:
         return statments
 
     def save_statments(self, bank, client, company):
+        is_valid, missing_columns = self.__verified_accounts()
+        if not is_valid:
+            raise Exception(MISSING_MESSAGE.format(str(missing_columns)))
         self.__clean_data()
         try:
             self.collection.insert_many(self.get_account_statment_dict())
