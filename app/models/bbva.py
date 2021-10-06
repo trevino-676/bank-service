@@ -1,23 +1,27 @@
 from os import environ
 
 import pandas as pd
-import numpy as  np
+import numpy as np
+import pymongo
 
-from app.models import db, MISSING_MESSAGE
+from app.models import MISSING_MESSAGE
 from logger import logger
 
 
 class BBVAModel:
     def __init__(self, document):
         self.df = pd.read_excel(document)
-        self.bbva_collection = db[environ.get("BBVA_COLLECTION")]
-        self.account_statment_collection = db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
+        self.db = pymongo.MongoClient(environ.get("MONGO_URI")).robin_hood
+        self.bbva_collection = self.db[environ.get("BBVA_COLLECTION")]
+        self.account_statment_collection = self.db[
+            environ.get("ACCOUNT_STATMENT_COLLECTION")
+        ]
         self.mandatory_columns = [
-            'Día',
-            'Concepto / Referencia',
-            'cargo',
-            'Abono',
-            'Saldo'
+            "Día",
+            "Concepto / Referencia",
+            "cargo",
+            "Abono",
+            "Saldo",
         ]
 
     def __verified_statments(self):
@@ -32,12 +36,14 @@ class BBVAModel:
         return is_valid, missing_columns
 
     def __clear_data(self):
-        self.df = self.df.rename(columns={
-            "Día": "fecha",
-            "Concepto / Referencia": "concepto",
-            "Abono": "abono",
-            "Saldo": "saldo"
-        })
+        self.df = self.df.rename(
+            columns={
+                "Día": "fecha",
+                "Concepto / Referencia": "concepto",
+                "Abono": "abono",
+                "Saldo": "saldo",
+            }
+        )
         self.df.cargo = self.df.cargo.replace(np.nan, 0)
         self.df.abono = self.df.abono.replace(np.nan, 0)
         self.df.saldo = self.df.saldo.replace(np.nan, 0)
@@ -63,7 +69,8 @@ class BBVAModel:
     def __get_account_statments_collection(self):
         account_statments = self.df.to_dict("records")
         account_statments = list(
-            map(self.__map_account_statments_collection, account_statments))
+            map(self.__map_account_statments_collection, account_statments)
+        )
         return account_statments
 
     def save_statments(self) -> bool:
@@ -74,7 +81,8 @@ class BBVAModel:
         try:
             self.bbva_collection.insert_many(self.__get_bbva_accounts_collection())
             self.account_statment_collection.insert_many(
-                self.__get_account_statments_collection())
+                self.__get_account_statments_collection()
+            )
             return True
         except Exception as e:
             logger.error(e)

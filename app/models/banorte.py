@@ -1,32 +1,33 @@
 from os import environ
 
 import pandas as pd
-import numpy as np
 import pendulum
+import pymongo
 
-from app.models import db, MISSING_MESSAGE
+from app.models import MISSING_MESSAGE
 from logger import logger
 
 
 class BanorteModel:
     def __init__(self, document):
         self.df = pd.read_csv(document)
-        self.banorte_collection = db[environ.get("BANORTE_COLLECTION")]
-        self.account_statment = db[environ.get("ACCOUNT_STATMENTS_COLLECTION")]
+        self.db = pymongo.MongoClient(environ.get("MONGO_URI")).robin_hood
+        self.banorte_collection = self.db[environ.get("BANORTE_COLLECTION")]
+        self.account_statment = self.db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
         self.__verification_list = [
-            'CUENTA',
-            'FECHA DE OPERACIÓN',
-            'FECHA',
-            'REFERENCIA',
-            'DESCRIPCIÓN',
-            'COD. TRANSAC',
-            'SUCURSAL',
-            'DEPÓSITOS',
-            'RETIROS',
-            'SALDO',
-            'MOVIMIENTO',
-            'DESCRIPCIÓN DETALLADA',
-            'CHEQUE'
+            "CUENTA",
+            "FECHA DE OPERACIÓN",
+            "FECHA",
+            "REFERENCIA",
+            "DESCRIPCIÓN",
+            "COD. TRANSAC",
+            "SUCURSAL",
+            "DEPÓSITOS",
+            "RETIROS",
+            "SALDO",
+            "MOVIMIENTO",
+            "DESCRIPCIÓN DETALLADA",
+            "CHEQUE",
         ]
 
     def verify_statments(self):
@@ -49,36 +50,42 @@ class BanorteModel:
         return pendulum.from_format(date, "DD/MM/YYYY").format("YYYY-MM-DD")
 
     def __rename_columns(self):
-        self.df = self.df.rename(columns={
-            "CUENTA": "cuenta",
-            "FECHA DE OPERACIÓN": "fecha_operacion",
-            "FECHA": "fecha",
-            "REFERENCIA": "referencia",
-            "DESCRIPCIÓN": "descripcion",
-            "COD. TRANSAC": "codigo_transaccion",
-            "SUCURSAL": "sucursal",
-            "DEPÓSITOS": "deposito",
-            "RETIROS": "retiro",
-            "SALDO": "saldo",
-            "MOVIMIENTO": "movimiento",
-            "DESCRIPCIÓN DETALLADA": "descripcion",
-            "CHEQUE": "cheque"
-        })
+        self.df = self.df.rename(
+            columns={
+                "CUENTA": "cuenta",
+                "FECHA DE OPERACIÓN": "fecha_operacion",
+                "FECHA": "fecha",
+                "REFERENCIA": "referencia",
+                "DESCRIPCIÓN": "descripcion",
+                "COD. TRANSAC": "codigo_transaccion",
+                "SUCURSAL": "sucursal",
+                "DEPÓSITOS": "deposito",
+                "RETIROS": "retiro",
+                "SALDO": "saldo",
+                "MOVIMIENTO": "movimiento",
+                "DESCRIPCIÓN DETALLADA": "descripcion",
+                "CHEQUE": "cheque",
+            }
+        )
 
     def __clean_data(self):
         self.__rename_columns()
-        self.df.cheque = self.df.cheque.replace("-". "")
-        self.df.deposito = (self.df.deposito.replace("-", "00")
-                            .apply(self.__convert_currency_to_str))
+        self.df.cheque = self.df.cheque.replace("-", "")
+        self.df.deposito = self.df.deposito.replace("-", "00").apply(
+            self.__convert_currency_to_str
+        )
         self.df.descripcion = self.df.descripcion.replace("-", "")
-        self.df.retiro = (self.df.retiro.replace("-", "00")
-                          .apply(self.__convert_currency_to_str))
-        self.df.saldo = (self.df.saldo.replace("-", "00")
-                         .apply(self.__convert_currency_to_str))
+        self.df.retiro = self.df.retiro.replace("-", "00").apply(
+            self.__convert_currency_to_str
+        )
+        self.df.saldo = self.df.saldo.replace("-", "00").apply(
+            self.__convert_currency_to_str
+        )
         self.df.fecha = self.df.fecha.apply(self.__convert_date_to_common_date)
-        self.df.fecha_operacion = (self.df.fecha_operacion
-                                   .apply(self.__convert_date_to_common_date))
-        self.df.drop("index")
+        self.df.fecha_operacion = self.df.fecha_operacion.apply(
+            self.__convert_date_to_common_date
+        )
+        # self.df = self.df.drop("index", axis=1, inplace=True)
 
     def __get_banorte_statments(self):
         statments = self.df.to_dict("records")
@@ -115,30 +122,3 @@ class BanorteModel:
         except Exception as e:
             logger.error(e)
             return False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
