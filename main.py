@@ -18,6 +18,7 @@ app.add_middleware(
 )
 app.include_router(router)
 
+
 @app.get("/", tags=["root"])
 def hello():
     return "Hello world"

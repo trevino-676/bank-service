@@ -30,4 +30,3 @@ def process_file(bank: str, file):
         service = BanorteService(file)
 
     service.save_statments()
-

@@ -14,4 +14,3 @@ class BBVAService:
         except Exception as e:
             logger.error(e)
             return False
-

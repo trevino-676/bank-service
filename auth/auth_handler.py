@@ -18,4 +18,3 @@ def decode_jwt(token: str) -> Optional[dict]:
     except Exception as e:
         logger.error(e)
         return {}
-

@@ -14,23 +14,25 @@ class HSBCModel:
         self.__client = pymongo.MongoClient(environ.get("MONGO_URI"))
         self.__db = self.__client.robin_hood
         self.collection = self.__db[environ.get("HSBC_COLLECTION")]
-        self.statments_collection = self.__db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
+        self.statments_collection = self.__db[
+            environ.get("ACCOUNT_STATMENT_COLLECTION")
+        ]
         self.mandatory_columns = [
-            'Nombre de la cuenta',
-            'Número de cuenta',
-            'Nombre del banco',
-            'Divisa',
-            'País',
-            'Estatus de la cuenta',
-            'Tipo de cuenta',
-            'Referencia del Banco',
-            'Narrativa adicional',
-            'Referencia del cliente',
-            'Tipo TRN',
-            'Importe del abono',
-            'Importe del cargo',
-            'Saldo',
-            'Fecha posterior'
+            "Nombre de la cuenta",
+            "Número de cuenta",
+            "Nombre del banco",
+            "Divisa",
+            "País",
+            "Estatus de la cuenta",
+            "Tipo de cuenta",
+            "Referencia del Banco",
+            "Narrativa adicional",
+            "Referencia del cliente",
+            "Tipo TRN",
+            "Importe del abono",
+            "Importe del cargo",
+            "Saldo",
+            "Fecha posterior",
         ]
 
     def __verified_accounts(self):
@@ -43,7 +45,6 @@ class HSBCModel:
                 missing_columns.append(column)
 
         return is_valid, missing_columns
-
 
     def __clean_data(self):
         self.df["Importe del cargo"] = self.df["Importe del cargo"].replace(np.nan, 0)
