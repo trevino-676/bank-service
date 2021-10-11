@@ -1,19 +1,19 @@
 from os import environ
-from typing import Optional, List
 
-from bson import ObjectId
-import motor.motor_asyncio
+import pymongo
 
-from app.models.account_statment import AccountStatment
+from logger import logger
 
-
-db_route = f"{environ.get('MONGO_URI')}robin_hood"
-client = motor.motor_asyncio.AsyncIOMotorClient(db_route)
-db = client.college
+db_route = environ.get("MONGO_URL")
+client = pymongo.MongoClient(environ.get("MONOG_URI"))
+db = client.robin_hood
+collection = db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
 
 
-async def get_account_statments(filters: dict) -> Optional[List[AccountStatment]]:
-    statments = (
-        await db[environ.get("ACCOUNT_STATMENT_COLLECTION")].find(filters).to_list(100)
-    )
-    return statments
+def get_account_statments(filters: dict) -> list:
+    try:
+        statments = collection.find(filters)
+        return list(statments)
+    except Exception as e:
+        logger.error(e)
+        return None
