@@ -1,8 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
+from fastapi.responses import JSONResponse
+from bson.json_util import dumps
 
-from app.services.account_statments_service import get_account_statments
+from app.services.account_statments_service import AccountStatmentsService
 
 
 router = APIRouter(prefix="/v1/account/statments", tags=["Account statments"])
@@ -26,7 +28,17 @@ def get_account_statments_by_movements(
     elif from_date and to_date:
         filters["fecha"] = {"$gte": from_date, "$lte": to_date}
 
-    # response_headers = {"Content-Type": "applicaction/json"}
+    response_headers = {"Content-Type": "applicaction/json"}
+    service = AccountStatmentsService()
+    statments = service.get_movements(filters)
 
-    statments = get_account_statments(filters)
-    return statments
+    if not statments:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=dumps({"message": "No se encontraron movimientos bancarios"}),
+            headers=response_headers,
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content=dumps(statments), headers=response_headers
+    )

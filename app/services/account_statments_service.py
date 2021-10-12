@@ -1,19 +1,21 @@
 from os import environ
+from typing import Optional, List
 
 import pymongo
 
 from logger import logger
 
-db_route = environ.get("MONGO_URL")
-client = pymongo.MongoClient(environ.get("MONOG_URI"))
-db = client.robin_hood
-collection = db[environ.get("ACCOUNT_STATMENT_COLLECTION")]
 
+class AccountStatmentsService:
+    def __init__(self):
+        self.db = pymongo.MongoClient(environ.get("MONGO_URI")).robin_hood
 
-def get_account_statments(filters: dict) -> list:
-    try:
-        statments = collection.find(filters)
-        return list(statments)
-    except Exception as e:
-        logger.error(e)
-        return None
+    def get_movements(self, filters: dict) -> Optional[List]:
+        try:
+            movements = self.db[environ.get("ACCOUNT_STATMENT_COLLECTION")].find(filters)
+            if movements.count() == 0:
+                return None
+            return list(movements)
+        except Exception as e:
+            logger.error(e)
+            return None
