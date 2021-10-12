@@ -19,3 +19,27 @@ class AccountStatmentsService:
         except Exception as e:
             logger.error(e)
             return None
+
+    def get_daily_group_movements(self, filters: dict) -> Optional[List]:
+        try:
+            movements = self.db[environ.get("ACCOUNT_STATMENT_COLLECTION")].aggregate(
+                self.__get_aggregate_list(filters)
+            )
+            return list(movements)
+        except Exception as e:
+            logger.error(e)
+            return None
+
+    def __get_aggregate_list(self, filters: dict) -> list:
+        return [
+            {"$match": filters},
+            {
+                "$group": {
+                    "_id": {"fecha": "$fecha", "banco": "$banco"},
+                    "deposito": {"$sum": {"$toDouble": "$deposito"}},
+                    "retiro": {"$sum": {"$toDouble": "$retiro"}},
+                    "saldo": {"$last": "$saldo"},
+                }
+            },
+            {"$sort": {"_id.fecha": 1}},
+        ]
