@@ -40,7 +40,9 @@ def get_account_statments_by_movements(
         )
 
     return JSONResponse(
-        status_code=status.HTTP_200_OK, content=dumps(statments), headers=response_headers
+        status_code=status.HTTP_200_OK,
+        content=dumps(statments),
+        headers=response_headers,
     )
 
 
@@ -74,5 +76,7 @@ def get_account_statments_by_day(
         )
 
     return JSONResponse(
-        status_code=status.HTTP_200_OK, content=dumps(movements), headers=response_headers
+        status_code=status.HTTP_200_OK,
+        content=dumps(movements),
+        headers=response_headers,
     )

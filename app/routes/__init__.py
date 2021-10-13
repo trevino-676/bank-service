@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.services.hsbc_service import HSBCService
 from app.services.banorte_service import BanorteService
 from app.services.bbva_service import BBVAService
+from app.services.afirme_service import AfirmeService
 
 
 router = APIRouter(prefix="/v1/upload", tags=["upload files"])
@@ -28,5 +29,7 @@ def process_file(bank: str, file):
         service = BBVAService(file)
     elif bank == "banorte":
         service = BanorteService(file)
+    elif bank == "afirme":
+        service = AfirmeService(file)
 
     service.save_statments()

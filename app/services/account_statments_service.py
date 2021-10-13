@@ -12,7 +12,9 @@ class AccountStatmentsService:
 
     def get_movements(self, filters: dict) -> Optional[List]:
         try:
-            movements = self.db[environ.get("ACCOUNT_STATMENT_COLLECTION")].find(filters)
+            movements = self.db[environ.get("ACCOUNT_STATMENT_COLLECTION")].find(
+                filters
+            )
             if movements.count() == 0:
                 return None
             return list(movements)
